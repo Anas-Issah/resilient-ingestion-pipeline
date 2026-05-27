@@ -14,14 +14,16 @@ def db_connector():
     meta = MetaData()
     engine = create_engine(url=url,pool_size=5,pool_timeout=5,pool_recycle=300,pool_pre_ping=True)
     with engine.connect() as conn:
-        conn.execute(text("CREATE TABLE IF NOT EXIST coin_tb (" \
-        "id VARCHAR(10) PRIMARY KEY NOT NULL,name VARCHAR(50)) NOT NULL"))
+        conn.execute(text("CREATE TABLE IF NOT EXISTS coin_tb (" \
+        "id VARCHAR(10) PRIMARY KEY NOT NULL,name VARCHAR(50) NOT NULL)"))
 
-        conn.execute(text("CREATE TABLE IF NOT EXIST coin_detail_tb(" \
+        conn.execute(text("CREATE TABLE IF NOT EXISTS coin_details_tb(" \
         "current_price NUMERIC(18,2) NOT NULL,high_24h NUMERIC(18,2) NOT NULL," \
         "low_24h NUMERIC(18,2) NOT NULL,market_cap NUMERIC(18,2) NOT NULL, total_volume NUMERIC(20,2) NOT NULL ," \
-        " last_updated TIMESTAMPTZ NOT NULL"))
+        " coin_id VARCHAR(10),last_updated TIMESTAMPTZ NOT NULL,CONSTRAINT fk_coin_id FOREIGN KEY(coin_id) REFERENCES" \
+        " coin_tb(id))"))
+        conn.commit()
         
     coin_tb = Table("coin_tb",meta,autoload_with=engine)
-    coin_detail_tb = Table("coin_detail_tb",meta,autoload_with=engine)
-    return [engine, coin_tb, coin_detail_tb ]
+    coin_details_tb = Table("coin_details_tb",meta,autoload_with=engine)
+    return [engine, coin_tb, coin_details_tb ]

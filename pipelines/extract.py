@@ -16,7 +16,7 @@ def extrator()-> list:
         "vs_currency":'usd',
         "order":"market_cap_rank_asc"
     }
-    url = f"https://api.coingecko.com/api/v3/coins/markets"
+    url = str(os.getenv("CG_URL"))
 
     response = requests.get(url=url,headers=headers,params=params)
     
@@ -25,6 +25,6 @@ def extrator()-> list:
         [{"id":coin["symbol"],"name":coin["name"]}  for coin in response.json()],
          [   {"current_price":coin["current_price"],"market_cap":coin["market_cap"],
              'high_24h':coin["high_24h"],"low_24h":coin["low_24h"], "total_volume":coin["total_volume"],
-             'last_upated':coin["last_updated"]}
+             "coin_id":coin["symbol"],'last_updated':coin["last_updated"]}
              for coin in response.json()]
     ]
