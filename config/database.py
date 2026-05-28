@@ -26,4 +26,7 @@ def db_connector():
         
     coin_tb = Table("coin_tb",meta,autoload_with=engine)
     coin_details_tb = Table("coin_details_tb",meta,autoload_with=engine)
-    return [engine, coin_tb, coin_details_tb ]
+    with engine.connect() as conn:
+        ids = [id[0]  for id in conn.execute(select(coin_tb.c.id)).fetchall()]
+        
+    return [engine, coin_tb, coin_details_tb ,ids]

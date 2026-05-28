@@ -7,7 +7,7 @@ def transform_data(stored_coin_ids:list,data:list):
     """
     # coin_tb
     coin_tb = pd.DataFrame(data[0])
-    coin_tb = coin_tb[coin_tb["id"].isin(stored_coin_ids)]
+    coin_tb = coin_tb[~coin_tb["id"].isin(stored_coin_ids)]
     coin_tb.dropna(inplace=True)
 
     # coin_details_df
