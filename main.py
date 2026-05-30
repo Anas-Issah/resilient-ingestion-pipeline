@@ -1,17 +1,21 @@
 
 from pipelines import transform, extract, load
 from config import database
+from utils import auditor
 
 
 from sqlalchemy import select
-# extracted_data = extract.extrator()
+
+extracted_data = extract.extrator()
 connector = database.db_connector()
-# extracted_coin_id = connector[3]
-# transformed_data = transform.transform_data(extracted_coin_id,extracted_data)
-# 
-# 
-# load.loader(connector=connector[:3],transformed_data=transformed_data)
-tb1 = connector[1]
-from sqlalchemy import inspect
-inpector = inspect(connector[0])
-print([col['name'] for col in inpector.get_columns('coin_details_tb')])
+
+#auditing
+auditor.coin_tb_auditor(coin_tb=connector[1],engine=connector[0])
+auditor.coin_details_tb_auditor(coin_details_tb=connector[2],engine=connector[0])
+
+
+extracted_coin_id = connector[3]
+transformed_data = transform.transform_data(extracted_coin_id,extracted_data)
+
+
+load.loader(connector=connector[:3],transformed_data=transformed_data)
