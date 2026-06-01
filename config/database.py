@@ -1,4 +1,5 @@
 from sqlalchemy import MetaData, URL,Table,inspect,create_engine,select,text
+import sqlalchemy.exc as sqlerr
 from dotenv import load_dotenv
 import os
 load_dotenv(override=True)
@@ -12,21 +13,30 @@ def db_connector():
     )
 
     meta = MetaData()
-    engine = create_engine(url=url,pool_size=5,pool_timeout=5,pool_recycle=300,pool_pre_ping=True)
-    with engine.connect() as conn:
-        conn.execute(text("CREATE TABLE IF NOT EXISTS coin_tb (" \
-        "id VARCHAR(10) PRIMARY KEY NOT NULL,name VARCHAR(50) NOT NULL)"))
+    try:
+        engine = create_engine(url=url,pool_size=10,pool_timeout=5,pool_recycle=300,pool_pre_ping=True)
+        if not engine:
+            pass
+        else:
+            with engine.connect() as conn:
+                conn.execute(text("CREATE TABLE IF NOT EXISTS coin_tb (" \
+                "id VARCHAR(10) PRIMARY KEY NOT NULL,name VARCHAR(50) NOT NULL)"))
 
-        conn.execute(text("CREATE TABLE IF NOT EXISTS coin_details_tb(" \
-        "current_price NUMERIC(18,2) NOT NULL,high_24h NUMERIC(18,2) NOT NULL," \
-        "low_24h NUMERIC(18,2) NOT NULL,market_cap NUMERIC(18,2) NOT NULL, total_volume NUMERIC(20,2) NOT NULL ," \
-        " coin_id VARCHAR(10),last_updated TIMESTAMPTZ NOT NULL,CONSTRAINT fk_coin_id FOREIGN KEY(coin_id) REFERENCES" \
-        " coin_tb(id))"))
-        conn.commit()
-        
-    coin_tb = Table("coin_tb",meta,autoload_with=engine)
-    coin_details_tb = Table("coin_details_tb",meta,autoload_with=engine)
-    with engine.connect() as conn:
-        ids = [id[0]  for id in conn.execute(select(coin_tb.c.id)).fetchall()]
-        
-    return [engine, coin_tb, coin_details_tb ,ids]
+                conn.execute(text("CREATE TABLE IF NOT EXISTS coin_details_tb(" \
+                "current_price NUMERIC(18,2) NOT NULL,high_24h NUMERIC(18,2) NOT NULL," \
+                "low_24h NUMERIC(18,2) NOT NULL,market_cap NUMERIC(18,2) NOT NULL, total_volume NUMERIC(20,2) NOT NULL ," \
+                " coin_id VARCHAR(10),last_updated TIMESTAMPTZ NOT NULL,CONSTRAINT fk_coin_id FOREIGN KEY(coin_id) REFERENCES" \
+                " coin_tb(id))"))
+                conn.commit()
+                
+            coin_tb = Table("coin_tb",meta,autoload_with=engine)
+            coin_details_tb = Table("coin_details_tb",meta,autoload_with=engine)
+            with engine.connect() as conn:
+                ids = [id[0]  for id in conn.execute(select(coin_tb.c.id)).fetchall()]
+            
+        return [engine, coin_tb, coin_details_tb ,ids]
+    except (sqlerr.ProgrammingError, sqlerr.InterfaceError) as e:
+        engine = 0
+    except:
+        engine = 1
+    return engine
