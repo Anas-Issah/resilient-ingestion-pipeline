@@ -28,5 +28,6 @@ def extrator():
                         "coin_id":coin["symbol"],'last_updated':coin["last_updated"]}
                         for coin in response.json()]
                 ]
-    except:
-        return response.status_code
+    except (requests.exceptions.ConnectionError,requests.exceptions.Timeout):
+        return 1
+    
