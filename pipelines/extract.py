@@ -20,14 +20,20 @@ def extrator():
     try:
     
         response = requests.get(url=url,headers=headers,params=params)
-        return [
+        status_code = response.status_code
+        if response.ok:
+            return [
 
-                    [{"id":coin["symbol"],"name":coin["name"]}  for coin in response.json()],
-                    [   {"current_price":coin["current_price"],"market_cap":coin["market_cap"],
-                        'high_24h':coin["high_24h"],"low_24h":coin["low_24h"], "total_volume":coin["total_volume"],
-                        "coin_id":coin["symbol"],'last_updated':coin["last_updated"]}
-                        for coin in response.json()]
-                ]
+                        [{"id":coin["symbol"],"name":coin["name"]}  for coin in response.json()],
+                        [   {"current_price":coin["current_price"],"market_cap":coin["market_cap"],
+                            'high_24h':coin["high_24h"],"low_24h":coin["low_24h"], "total_volume":coin["total_volume"],
+                            "coin_id":coin["symbol"],'last_updated':coin["last_updated"]}
+                            for coin in response.json()]
+                    ]
+        else:
+            return response.status_code
+        
     except (requests.exceptions.ConnectionError,requests.exceptions.Timeout):
         return 1
+    
     
