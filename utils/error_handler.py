@@ -42,6 +42,7 @@ def run_pipeline(m1,m2,m3,m4):
             pipe_running = True
             retry = 3
             back_of = 1
+            back_of_max = 128
             while pipe_running:
                 try:
                     extracted_data = func()
@@ -49,13 +50,16 @@ def run_pipeline(m1,m2,m3,m4):
                         if extracted_data == 1:
                             back_of *= 2
                             retry -= 1
-                            raise NetworkConnectionError(f"{extracted_data}:Connection or Timeout error occured-retry in {back_of} seconds-"
+                            if retry > 0:
+                                raise NetworkConnectionError(f"{extracted_data}:Connection or Timeout error occured-retry in {back_of} seconds-"
                                                          f"retries left {retry}")
+                            else:
+                                raise FatalError(f"{extracted_data}:Connection or Timeout error!-Retries exhausted-pipeline stopped[{func.__qualname__}]")
                         elif 400 <= extracted_data and 500 > extracted_data:
                             if extracted_data == 429:
                                 back_of *= 2
                                 raise TransientErrorBackoff(f"{extracted_data}: Rate limit error.Implementing backoff retry."
-                                                            f"Backoff time {back_of} seconds-[{func.__qualname__}]")
+                                                                f"Backoff time {back_of} seconds-[{func.__qualname__}]")
                             elif extracted_data == 401 or extracted_data == 403:
                                 raise AuthValidationError(f"{extracted_data}: Authentication or validation error encountered:Pipeline stopped")
                             else:
@@ -63,12 +67,17 @@ def run_pipeline(m1,m2,m3,m4):
                         else:
                             if extracted_data == 503:
                                 back_of *= 2
-                                raise TransientErrorBackoff(f"{extracted_data}:backoff delay implemented-[{func.__qualname__}]")
+                                if back_of <= back_of_max:
+                                    raise TransientErrorBackoff(f"{extracted_data}:backoff delay implemented-[{func.__qualname__}]")
+                                else:
+                                    raise FatalError(f"Back of retries exhausted!-Pipelin stopped-[{func.__qualname__}]")
+
                             else :
                                 retry -= 1
                                 raise TransientErrorRetry(f"{extracted_data}:Retrying connecting to source -" 
                                                           f"retries left {retry}-[{func.__qualname__}]")
                     else:
+                        
                         #connect to database
                         db_connector = m2.db_connector()
                         if db_connector == 0:
@@ -91,9 +100,9 @@ def run_pipeline(m1,m2,m3,m4):
                             #reset backoff and retries
                             back_of = 1
                             retry = 3
-                            time.sleep(2)
+                            
                 except FatalError as e:
-                    logger.exception(e)
+                    logger.warning(e)
                     sender_mail = os.getenv("SENDER_MAIL")
                     reciever_mail = os.getenv("RECIEVER_MAIL")
                     password = os.getenv("MAIL_PASSWORD")
@@ -138,8 +147,7 @@ def email_sender(sender_mail,reciever_mail,password, message):
         with smtplib.SMTP_SSL("smtp.gmail.com",465,context=context) as server:
             server.login(sender_mail,password)
             server.send_message(msg)
+            logger.info("Email sent")
     except:
         logger.warning("Could not send email")
 
-
-# add a max backoff retry

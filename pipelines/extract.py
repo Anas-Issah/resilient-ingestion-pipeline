@@ -20,7 +20,6 @@ def extrator():
     try:
     
         response = requests.get(url=url,headers=headers,params=params)
-        status_code = response.status_code
         if response.ok:
             return [
 
